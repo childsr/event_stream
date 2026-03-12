@@ -336,6 +336,16 @@ export class EventStream<T> {
       }
     )
   }
+  enumerate(): EventStream<[T,number]> {
+    return new EventStream(
+      listener => {
+        let i = 0
+        return this.executor(
+          x => listener([x,i++])
+        )
+      }
+    )
+  }
 
   /**
    * **mergeWith**
