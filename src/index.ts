@@ -30,36 +30,50 @@ export type ExecutorFn<T> = (listener: (payload: T) => void) => CancelController
  * ```
  */
 export class EventStream<T> {
-  private readonly executor: (listener: (payload: T) => void) => CancelController
+  private readonly _addListener: (listener: (payload: T) => void) => CancelController
 
+  /**
+   * **addListener**
+   * 
+   * (same as `listen()` and `start()`)
+   * 
+   * @param listener callback function to be connected the underlying event source
+   * @returns a `CancelController` object that can be used to stop listening for events
+   */
+  addListener(listener: (payload: T) => void): CancelController {
+    return this._addListener(listener)
+  }
   /**
    * **start**
    * 
-   * (same as `listen()`)
+   * (same as `listen()` and `addListener()`)
    * 
    * @param listener callback function to be connected the underlying event source
    * @returns a `CancelController` object that can be used to stop listening for events
    */
   start(listener: (payload: T) => void): CancelController {
-    return this.executor(listener)
+    return this._addListener(listener)
   }
   /**
    * **listen**
    * 
-   * (same as `start()`)
+   * (same as `start()` and `addListener()`)
    * 
    * @param listener callback function to be connected the underlying event source
    * @returns a `CancelController` object that can be used to stop listening for events
    */
   listen(listener: (payload: T) => void): CancelController {
-    return this.executor(listener)
+    return this._addListener(listener)
   }
 
   /**
-   * @param executor function that will be called every time this EventStream has a listener given to it
+   * @param addListener Function that will be called every time this EventStream has
+   * a listener given to it. It is responsible for connecting listener functions to
+   * the underlying event source and returning a `CancelController` that can be used
+   * to later disconnent the given listener.
    */
-  constructor(executor: (listener: (payload: T) => void) => CancelController) {
-    this.executor = executor
+  constructor(addListener: (listener: (payload: T) => void) => CancelController) {
+    this._addListener = addListener
   }
   /**
    * **map**
@@ -71,7 +85,7 @@ export class EventStream<T> {
     return new EventStream(
       listenerU => {
         const listenerT: Listener<T> = t => listenerU(f(t))
-        return this.executor(listenerT)
+        return this._addListener(listenerT)
       }
     )
   }
@@ -83,7 +97,7 @@ export class EventStream<T> {
             listenerU(u)
           }
         }
-        return this.executor(listenerT)
+        return this._addListener(listenerT)
       }
     )
   }
@@ -96,7 +110,7 @@ export class EventStream<T> {
           const ok = f(t)
           if (ok) filteredListener(t)
         }
-        return this.executor(listener)
+        return this._addListener(listener)
       }
     )
   }
@@ -116,7 +130,7 @@ export class EventStream<T> {
           }
           else outerListener(x)
         }
-        return this.executor(innerListener)
+        return this._addListener(innerListener)
       }
     )
   }
@@ -139,7 +153,7 @@ export class EventStream<T> {
             ctlr.cancel()
           }
         }
-        const ctlr = this.executor(innerListener)
+        const ctlr = this._addListener(innerListener)
         return ctlr
       }
     )
@@ -162,7 +176,7 @@ export class EventStream<T> {
   takeWhile(predicate: (x: T) => boolean): EventStream<T> {
     return new EventStream(
       listener => {
-        const ctlr = this.executor(
+        const ctlr = this._addListener(
           x => {
             if (predicate(x)) {
               listener(x)
@@ -186,7 +200,7 @@ export class EventStream<T> {
     return new EventStream(
       listener => {
         let dropping = true
-        return this.executor(
+        return this._addListener(
           x => {
             if (dropping) {
               if (predicate(x)) {
@@ -243,7 +257,7 @@ export class EventStream<T> {
         f(x)
         listener(x)
       }
-      return this.executor(ammendedListener)
+      return this._addListener(ammendedListener)
     })
   }
   /**
@@ -269,7 +283,7 @@ export class EventStream<T> {
   process<State,U>(f: (state: State, value: T) => Generator<U,State>, initialState: State): EventStream<U> {
     return new EventStream<U>(listener => {
       let state = initialState
-      return this.executor(payload => {
+      return this._addListener(payload => {
         const generator = f(state,payload)
         while (true) {
           const next = generator.next()
@@ -314,7 +328,7 @@ export class EventStream<T> {
     let timeoutId: ReturnType<typeof setTimeout> | null = null
     return new EventStream(
       listener => {
-        const ctlr = this.executor(
+        const ctlr = this._addListener(
           x => {
             if (timeoutId !== null) {
               clearTimeout(timeoutId)
@@ -340,7 +354,7 @@ export class EventStream<T> {
     return new EventStream(
       listener => {
         let i = 0
-        return this.executor(
+        return this._addListener(
           x => listener([x,i++])
         )
       }
@@ -484,8 +498,18 @@ export class EventStream<T> {
   static empty: EventStream<any> = new EventStream(_ => ({ cancel() {} }))
 }
 
-export type PushStream<T> = [push: (x: T) => void, stream: EventStream<T>]
-export const pushStream = <T>(): PushStream<T> => {
+// export type PushStream<T> = [push: (x: T) => void, stream: EventStream<T>]
+/**
+ * **pushStream**
+ * 
+ * A helper function to create an `EventStream` that can be imperatively pushed
+ * to.
+ * 
+ * It returns a tuple of `[push, stream]` where `push` is a function that can
+ * be called to push new values to the stream, and `stream` is the
+ * `EventStream` that emits those values.
+ */
+export const pushStream = <T>(): [push: (x: T) => void, stream: EventStream<T>] => {
   const listeners: Map<number,Listener<T>> = new Map()
   let id = 0
 
