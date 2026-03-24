@@ -42,6 +42,42 @@ clickCoords
   })
 ```
 
+```typescript
+// Create an EventStream from 'keydown' events on the document
+const keydownStream = EventStream.fromEventTarget(document, 'keydown')
+// Convert stream of keydown events into stream of key codes
+const keyCodes: EventStream<number> = keydownStream.map(event => event.keyCode)
+// Filter key codes to only those for the Enter key (key code 13) and log them
+keyCodes
+  .filter(code => code === 13)
+  .listen(code => {
+    console.log(`Pressed Enter key: ${code}`)
+  })
+```
+
+**`take`, `drop`, and `slice`**
+
+```typescript
+// Create an EventStream that emits a number every 500ms
+// (`fromInterval` emits 0 first and increments by 1 on each successive event)
+const stream = EventStream.fromInterval(500) // 0, 1, 2, ...
+
+// Take only the first 5 events and ignore the rest
+const take5 = stream.take(5)
+take5.listen(console.log) // logs, '0', '1', '2', '3', and '4' then stops
+
+// Ignore the first 5 numbers
+const drop5 = stream.drop(5)
+drop5.listen(console.log) // after 2.5 seconds (5 x 500ms) starts logging '5', '6', '7', ...
+
+// Take the first 7 events and drop the first 3
+const slice3to7 = stream.slice(3, 7)
+// equivalent to...
+const slice3to7 = stream.take(7).drop(3)
+slice3to7.listen(console.log) // logs, '3', '4', '5', and '6', then stops
+
+```
+
 **Merging Streams**
 
 ```typescript

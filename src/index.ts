@@ -89,6 +89,20 @@ export class EventStream<T> {
       }
     )
   }
+  /**
+   * **flatMap**
+   * 
+   * Returns a new `EventStream` that will emit the values from the iterables
+   * returned by applying the given function to each value emitted by the original
+   * `EventStream`.
+   * 
+   * example:
+   * ```typescript
+   *  const stream = EventStream.fromInterval(1000).slice(1,4) // emits "1", "2", and "3" every second
+   *  const flatMapped = stream.flatMap(x => [x, x*10]) // emits "1", "10", "2", "20", "3", and "30" every second
+   *  flatMapped.listen(console.log)
+   * ```
+   */
   flatMap<U>(f: (x: T) => Iterable<U>): EventStream<U> {
     return new EventStream(
       listenerU => {
@@ -119,6 +133,13 @@ export class EventStream<T> {
    * 
    * Returns a new `EventStream` that will ignore the first `n`
    * events emitted from the original `EventStream`, then start listening.
+   * 
+   * example:
+   * ```typescript
+   *  const stream = EventStream.fromInterval(1000) // emits every second
+   *  const drop3 = stream.drop(3) // ignore the first 3 events
+   *  drop3.listen(console.log) // logs "3", "4", "5", ... every second
+   * ```
    */
   drop(n: number): EventStream<T> {
     return new EventStream(
@@ -139,6 +160,13 @@ export class EventStream<T> {
    * 
    * Returns a new `EventStream` that will will stop
    * listening after the first `n` events are emitted.
+   * 
+   * example:
+   * ```typescript
+   *  const stream = EventStream.fromInterval(1000) // emits every second
+   *  const take3 = stream.take(3) // only take the first 3 events
+   *  take3.listen(console.log) // logs "0", "1", "2" every second, then stops
+   * ```
    */
   take(n: number): EventStream<T> {
     return new EventStream(
@@ -163,6 +191,13 @@ export class EventStream<T> {
    * 
    * Returns a new `EventStream` that will take events from the original
    * `EventStream` starting at `start` and ending at `end`.
+   * 
+   * example:
+   * ```typescript
+   *  const stream = EventStream.fromInterval(1000) // emits every second
+   *  const slice1to4 = stream.slice(1,4) // only take events 1, 2, and 3
+   *  slice1to4.listen(console.log) // logs "1", "2", "3" every second, then stops
+   * ```
    */
   slice(start: number, end: number): EventStream<T> {
     return this.take(end).drop(start)
@@ -172,6 +207,13 @@ export class EventStream<T> {
    * 
    * Returns a new `EventStream` that will take events from the original
    * `EventStream` while the given predicate is true.
+   * 
+   * example:
+   * ```typescript
+   *  const stream = EventStream.fromInterval(1000) // emits every second
+   *  const takeWhileLessThan5 = stream.takeWhile(x => x < 5)
+   *  takeWhileLessThan5.listen(console.log) // logs "0", "1", "2", "3", "4" every second, then stops
+   * ```
    */
   takeWhile(predicate: (x: T) => boolean): EventStream<T> {
     return new EventStream(
@@ -195,6 +237,13 @@ export class EventStream<T> {
    * 
    * Returns a new `EventStream` that will drop events from the original
    * `EventStream` while the given predicate is true.
+   * 
+   * example:
+   * ```typescript
+   *  const stream = EventStream.fromInterval(1000) // emits every second
+   *  const dropWhileLessThan5 = stream.dropWhile(x => x < 5)
+   *  dropWhileLessThan5.listen(console.log) // logs "5", "6", "7", ... every second, ignoring "0", "1", "2", "3", and "4"
+   * ```
    */
   dropWhile(predicate: (x: T) => boolean): EventStream<T> {
     return new EventStream(
@@ -224,6 +273,13 @@ export class EventStream<T> {
    * 
    * Returns a new `EventStream` that will emit the same value
    * every time the original `EventStream` emits a value.
+   * 
+   * example:
+   * ```typescript
+   *  const stream = EventStream.fromInterval(1000) // emits every second
+   *  const constantHello = stream.constant("Hello")
+   *  constantHello.listen(console.log) // logs "Hello" every second
+   * ```
    */
   constant<U>(value: U): EventStream<U> {
     return this.map(() => value)
@@ -248,8 +304,7 @@ export class EventStream<T> {
   /**
    * Use this to call some side-effecting function on each value emitted.
    * 
-   * @param f 
-   * @returns 
+   * Does not modify the values emitted.
    */
   forEach(f: (x: T) => void): EventStream<T> {
     return new EventStream<T>(listener => {
