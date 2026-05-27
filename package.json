@@ -6,7 +6,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/childr/event_stream.git"
+    "url": "git+https://github.com/childsr/event_stream.git"
   },
   "description": "",
   "source": "src/index.ts",
