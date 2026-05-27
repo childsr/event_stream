@@ -172,16 +172,25 @@ export class EventStream<T> {
     return new EventStream(
       outerListener => {
         let i = 0
+        let ctlr: CancelController | undefined
+        let cancelledDuringInit = false
         const innerListener: Listener<T> = x => {
           if (i < n) {
             i++
             outerListener(x)
           }
           else {
-            ctlr.cancel()
+            if (ctlr) {
+              ctlr.cancel()
+            } else {
+              cancelledDuringInit = true
+            }
           }
         }
-        const ctlr = this._addListener(innerListener)
+        ctlr = this._addListener(innerListener)
+        if (cancelledDuringInit) {
+          ctlr.cancel()
+        }
         return ctlr
       }
     )
@@ -218,16 +227,26 @@ export class EventStream<T> {
   takeWhile(predicate: (x: T) => boolean): EventStream<T> {
     return new EventStream(
       listener => {
-        const ctlr = this._addListener(
+        let ctlr: CancelController | undefined
+        let cancelledDuringInit = false
+        const ctlr_inner = this._addListener(
           x => {
             if (predicate(x)) {
               listener(x)
             }
             else {
-              ctlr.cancel()
+              if (ctlr) {
+                ctlr.cancel()
+              } else {
+                cancelledDuringInit = true
+              }
             }
           }
         )
+        ctlr = ctlr_inner
+        if (cancelledDuringInit) {
+          ctlr.cancel()
+        }
         return ctlr
       }
     )
