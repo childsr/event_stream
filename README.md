@@ -4,9 +4,9 @@
 ![license](https://img.shields.io/npm/l/@bananaseed/event_stream)
 ![minzipped size](https://img.shields.io/bundlephobia/minzip/@bananaseed/event_stream)
 
-**@bananaseed/event_stream** is a lightweight, type-safe way to turn event sources (DOM elements, Node EventEmitters, etc.) into iterable stream objects.
+**@bananaseed/event_stream** is a lightweight, type-safe way to treat an event source (e.g. a DOM EventTarget, Node EventEmitter, etc) as a stream of values, applying functional operators like `map`, `filter`, and `reduce`.
 
-It allows you to treat events as collections, applying functional operators like `map`, `filter`, and `reduce` asynchronously.
+An `EventStream` object itself is just a wrapper around a function that accepts a listener. Nothing actually happens until you call `EventStream.listen()`. It is just a description of what to do when a listener is given to it. The `EventStream` object is never mutated as each method returns a new `EventStream` object.
 
 ## Examples
 

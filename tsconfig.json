@@ -1,25 +1,17 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "allowJs": true,
     "esModuleInterop": true,
-    "downlevelIteration": true,
     "declaration": true,
     "incremental": true,
-    "target": "es6",
     "noImplicitAny": true,
     "strict": true,
-    "moduleResolution": "node",
     "sourceMap": true,
-    "exactOptionalPropertyTypes": true,
-    "outDir": "dist",
-    "baseUrl": ".",
-    "paths": {
-      "*": [
-        "node_modules/*"
-      ]
-    }
+    "exactOptionalPropertyTypes": true
   },
   "include": [
     "src/**/*.ts"
