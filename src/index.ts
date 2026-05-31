@@ -452,6 +452,25 @@ export class EventStream<T> {
       }
     })
   }
+
+  /**
+   * **onCancel**
+   * 
+   * Returns a new `EventStream` that will call the given callback when it is cancelled.
+   */
+  onCancel(callback: () => void): EventStream<T> {
+    return new EventStream(
+      listener => {
+        const ctlr = this._addListener(listener)
+        return {
+          cancel() {
+            callback()
+            ctlr.cancel()
+          }
+        }
+      }
+    )
+  }
   /**
    * **merge**
    * 
