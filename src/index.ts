@@ -344,23 +344,26 @@ export class EventStream<T> {
    * example:
    * ```typescript
    *  const stream = EventStream.fromInterval(1000).slice(1,4)
-   *  const processedStream = stream.process(function*(count, value) {
-   *    // yield `value` `count` times
-   *    for (let i = 0; i < count; i++) {
+   *  const processedStream = stream.process(function*(state, value) {
+   *    // yield `value` `state` times
+   *    for (let i = 0; i < state; i++) {
    *      yield value
    *    }
-   *    return value // the next value of `count` will be `value`
+   *    return value // the next value of `state` will be `value`
    *  }, 1) // initial state is 1
    *  processedStream.listen(console.log) // "1" "2" "3" "3" 
    * ```
    */
-  process<State,U>(f: (state: State, value: T) => Generator<U,State>, initialState: State): EventStream<U> {
+  process<State,U>(
+    f: (state: State, value: T) => (Generator<U,State> | AsyncGenerator<U,State>),
+    initialState: State
+  ): EventStream<U> {
     return new EventStream<U>(listener => {
       let state = initialState
-      return this._addListener(payload => {
+      return this._addListener(async payload => {
         const generator = f(state,payload)
         while (true) {
-          const next = generator.next()
+          const next = await generator.next()
           if (next.done) {
             state = next.value
             break
@@ -428,9 +431,7 @@ export class EventStream<T> {
     return new EventStream(
       listener => {
         let i = 0
-        return this._addListener(
-          x => listener([x,i++])
-        )
+        return this._addListener(x => listener([x,i++]))
       }
     )
   }
@@ -471,6 +472,7 @@ export class EventStream<T> {
       }
     )
   }
+
   /**
    * **merge**
    * 
@@ -591,7 +593,6 @@ export class EventStream<T> {
   static empty: EventStream<any> = new EventStream(_ => ({ cancel() {} }))
 }
 
-// export type PushStream<T> = [push: (x: T) => void, stream: EventStream<T>]
 /**
  * **pushStream**
  * 
